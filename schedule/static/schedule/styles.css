@@ -178,16 +178,8 @@ header h1 {
     overflow: visible;
 }
 
-.schedule-table tbody tr.event-row {
-    cursor: pointer;
-}
-
-.schedule-table tbody tr.event-row:hover {
+.schedule-table tbody tr:hover {
     background: #f5f8ff;
-}
-
-.schedule-table tbody tr.event-row.expanded {
-    background: #eef3ff;
 }
 
 .schedule-table tbody tr.live {
@@ -214,27 +206,6 @@ header h1 {
 @keyframes flash {
     0%, 100% { background: inherit; }
     50% { background: #fff3cd; }
-}
-
-/* Event details row */
-.event-details td {
-    background: #f8f9fa;
-    padding: 12px 16px;
-}
-
-.details-content {
-    font-size: 12px;
-    line-height: 1.6;
-}
-
-.detail-label {
-    font-weight: 600;
-    color: #555;
-}
-
-.country-full {
-    display: inline-block;
-    margin: 2px 4px 2px 0;
 }
 
 /* Time column - monospace for alignment */

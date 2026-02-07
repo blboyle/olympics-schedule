@@ -85,27 +85,27 @@
     </div>
 
     <script>
+        // Format dates using browser locale
+        function formatDates() {
+            const dateFormatter = new Intl.DateTimeFormat(undefined, { month: 'numeric', day: 'numeric' });
+            const timeFormatter = new Intl.DateTimeFormat(undefined, { hour: '2-digit', minute: '2-digit', hour12: false });
+
+            document.querySelectorAll('.time[data-datetime]').forEach(cell => {
+                const dt = new Date(cell.dataset.datetime);
+                cell.querySelector('.time-date').textContent = dateFormatter.format(dt);
+                cell.querySelector('.time-value').textContent = timeFormatter.format(dt);
+            });
+        }
+
+        formatDates();
+
         document.body.addEventListener('scheduleRefreshed', function() {
             htmx.trigger('#filters', 'change');
         });
 
-        // Row expand/collapse
-        document.addEventListener('click', function(e) {
-            const row = e.target.closest('.event-row');
-            if (row && !e.target.closest('a')) {
-                const details = row.nextElementSibling;
-                if (details && details.classList.contains('event-details')) {
-                    const isOpen = details.style.display !== 'none';
-                    details.style.display = isOpen ? 'none' : 'table-row';
-                    row.classList.toggle('expanded', !isOpen);
-                }
-            }
-        });
-
         // Jump to now
         document.getElementById('jump-to-now').addEventListener('click', function() {
-            const now = new Date();
-            const rows = document.querySelectorAll('.event-row[data-upcoming="true"]');
+            const rows = document.querySelectorAll('tr[data-upcoming="true"]');
             let target = null;
 
             // Find first live event, or first upcoming
@@ -129,7 +129,7 @@
         // Re-init after HTMX swap
         document.body.addEventListener('htmx:afterSwap', function(e) {
             if (e.detail.target.id === 'schedule-table') {
-                // Event handlers use delegation, no re-init needed
+                formatDates();
             }
         });
     </script>

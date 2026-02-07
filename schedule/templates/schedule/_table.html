@@ -1,4 +1,4 @@
-{% load schedule_tags %}
+{% load schedule_tags l10n %}
 
 <table class="schedule-table">
     <thead>
@@ -21,12 +21,12 @@
     </thead>
     <tbody>
         {% for event in events %}
-        <tr class="event-row {% if event.is_live %}live{% elif event.status == 'FINISHED' %}finished{% endif %}"
+        <tr class="{% if event.is_live %}live{% elif event.status == 'FINISHED' %}finished{% endif %}"
             data-start="{{ event.start_time|date:'c' }}"
             {% if event.status == 'SCHEDULED' or event.is_live %}data-upcoming="true"{% endif %}>
-            <td class="time">
-                <span class="time-date">{{ event.start_time|date:"m/d" }}</span>
-                <span class="time-value">{{ event.start_time|date:"H:i" }}</span>
+            <td class="time" data-datetime="{{ event.start_time|date:'c' }}">
+                <span class="time-date"></span>
+                <span class="time-value"></span>
             </td>
             <td class="sport">
                 {% if event.is_medal_event %}<span class="medal-icon" title="Medal Event">🏅</span>{% endif %}
@@ -63,24 +63,6 @@
                 {% else %}
                 {{ event.get_status_display }}
                 {% endif %}
-            </td>
-        </tr>
-        <tr class="event-details" style="display: none;">
-            <td colspan="6">
-                <div class="details-content">
-                    <strong>{{ event.event_name }}</strong> — {{ event.unit_name }}
-                    <br>
-                    <span class="detail-label">Venue:</span> {% if event.venue %}{{ event.venue.name }}{% endif %} {% if event.location %}({{ event.location }}){% endif %}
-                    <br>
-                    <span class="detail-label">Time:</span> {{ event.start_time|date:"l, M j, Y" }} at {{ event.start_time|date:"H:i" }}{% if event.end_time %} - {{ event.end_time|date:"H:i" }}{% endif %}
-                    <br>
-                    <span class="detail-label">Competitors:</span>
-                    {% for c in event.competitors.all %}
-                    <span class="country-full">{{ c.code|country_flag }} {{ c.name }}</span>{% if not forloop.last %}, {% endif %}
-                    {% empty %}
-                    TBD
-                    {% endfor %}
-                </div>
             </td>
         </tr>
         {% empty %}
