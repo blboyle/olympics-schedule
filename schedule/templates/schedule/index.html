@@ -174,12 +174,13 @@
 
         // Adjust competitors display based on available width
         function adjustCompetitors() {
-            const FLAG_WIDTH = 52;
-            const OVERFLOW_WIDTH = 30;
+            const FLAG_WIDTH = 48; // Width of each country-code element including margin
+            const OVERFLOW_WIDTH = 28; // Width of "+N" element
 
             document.querySelectorAll('.competitors-wrapper').forEach(wrapper => {
                 const cell = wrapper.closest('td');
-                const availableWidth = cell.clientWidth - 8;
+                if (!cell) return;
+
                 const competitors = wrapper.dataset.competitors;
                 if (!competitors) return;
 
@@ -190,10 +191,21 @@
 
                 if (comps.length === 0) return;
 
+                // Get cell's computed width (more reliable than clientWidth)
+                const cellStyle = window.getComputedStyle(cell);
+                const availableWidth = cell.clientWidth
+                    - parseFloat(cellStyle.paddingLeft)
+                    - parseFloat(cellStyle.paddingRight);
+
+                // Calculate how many flags fit
                 let maxVisible = Math.floor(availableWidth / FLAG_WIDTH);
+
+                // If not all fit, reserve space for overflow indicator
                 if (comps.length > maxVisible && maxVisible > 0) {
                     maxVisible = Math.floor((availableWidth - OVERFLOW_WIDTH) / FLAG_WIDTH);
                 }
+
+                // Ensure at least 1, at most all competitors
                 maxVisible = Math.max(1, Math.min(maxVisible, comps.length));
 
                 // Clear and rebuild using DOM methods
@@ -227,7 +239,10 @@
         });
 
         formatDates();
-        adjustCompetitors();
+        // Run adjustCompetitors after paint so widths are calculated
+        requestAnimationFrame(() => {
+            requestAnimationFrame(adjustCompetitors);
+        });
 
         document.body.addEventListener('scheduleRefreshed', function() {
             htmx.trigger('#filters', 'change');
@@ -259,7 +274,9 @@
         document.body.addEventListener('htmx:afterSwap', function(e) {
             if (e.detail.target.id === 'schedule-table') {
                 formatDates();
-                adjustCompetitors();
+                requestAnimationFrame(() => {
+                    requestAnimationFrame(adjustCompetitors);
+                });
             }
         });
 
