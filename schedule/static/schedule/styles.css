@@ -182,6 +182,16 @@ header h1 {
     background: #f5f8ff;
 }
 
+/* Clickable cells */
+.clickable {
+    cursor: pointer;
+}
+
+.clickable:hover {
+    text-decoration: underline;
+    color: #0b3d91;
+}
+
 .schedule-table tbody tr.live {
     background: #e8f5e9;
 }
@@ -262,7 +272,7 @@ header h1 {
 
 /* Competitors column */
 .competitors {
-    max-width: 140px;
+    min-width: 80px;
 }
 
 .country-code {

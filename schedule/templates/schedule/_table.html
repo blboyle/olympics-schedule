@@ -28,33 +28,28 @@
                 <span class="time-date"></span>
                 <span class="time-value"></span>
             </td>
-            <td class="sport">
+            <td class="sport clickable" data-filter="discipline" data-value="{{ event.discipline.code }}">
                 {% if event.is_medal_event %}<span class="medal-icon" title="Medal Event">🏅</span>{% endif %}
                 {{ event.discipline.name }}
             </td>
-            <td class="event-name">
+            <td class="event-name clickable" data-filter="event" data-value="{{ event.event_name }}">
                 <span class="event-title">{{ event.event_name }}</span>
                 <span class="session-inline">{{ event.unit_name }}</span>
             </td>
-            <td class="venue">
+            <td class="venue clickable" data-filter="venue" data-value="{% if event.venue %}{{ event.venue.code }}{% endif %}">
                 {% if event.venue %}{{ event.venue.short_name }}{% endif %}
                 {% if event.location %}<span class="location-inline">({{ event.location }})</span>{% endif %}
             </td>
             <td class="competitors">
                 {% with comps=event.competitors.all %}
-                {% if comps %}
-                    {% for c in comps|slice:":2" %}
-                    <span class="country-code" data-country="{{ c.code }}" title="{{ c.name }}">
+                <span class="competitors-wrapper" data-competitors="{% for c in comps %}{{ c.code }}:{{ c.name }}{% if not forloop.last %},{% endif %}{% endfor %}">
+                {% for c in comps %}
+                    <span class="country-code clickable" data-filter="country" data-value="{{ c.code }}" title="{{ c.name }}">
                         <span class="flag">{{ c.code|country_flag }}</span>
                         {{ c.code }}
                     </span>
-                    {% endfor %}
-                    {% if comps|length > 2 %}
-                    <span class="more-competitors" data-tooltip="{% for c in comps|slice:'2:' %}{{ c.code|country_flag }} {{ c.name }}{% if not forloop.last %}&#10;{% endif %}{% endfor %}">
-                        +{{ comps|length|add:"-2" }}
-                    </span>
-                    {% endif %}
-                {% endif %}
+                {% endfor %}
+                </span>
                 {% endwith %}
             </td>
             <td class="status status-{{ event.status|lower }}">

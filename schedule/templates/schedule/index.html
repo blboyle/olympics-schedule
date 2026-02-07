@@ -64,6 +64,26 @@
             </label>
 
             <label>
+                Venue:
+                <select name="venue">
+                    <option value="">All Venues</option>
+                    {% for v in venues %}
+                    <option value="{{ v.code }}" {% if v.code == current_venue %}selected{% endif %}>{{ v.short_name }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+
+            <label>
+                Event:
+                <select name="event">
+                    <option value="">All Events</option>
+                    {% for e in event_names %}
+                    <option value="{{ e }}" {% if e == current_event %}selected{% endif %}>{{ e }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+
+            <label>
                 Status:
                 <select name="status">
                     <option value="">All</option>
@@ -85,6 +105,35 @@
     </div>
 
     <script>
+        // NOC to flag emoji mapping (for dynamic competitor rendering)
+        const NOC_TO_ISO = {
+            "AIN": "XX", "ALB": "AL", "AND": "AD", "ARG": "AR", "ARM": "AM",
+            "AUS": "AU", "AUT": "AT", "AZE": "AZ", "BEL": "BE", "BEN": "BJ",
+            "BIH": "BA", "BOL": "BO", "BRA": "BR", "BUL": "BG", "CAN": "CA",
+            "CHI": "CL", "CHN": "CN", "COL": "CO", "CRO": "HR", "CYP": "CY",
+            "CZE": "CZ", "DEN": "DK", "ECU": "EC", "ERI": "ER", "ESP": "ES",
+            "EST": "EE", "FIN": "FI", "FRA": "FR", "GBR": "GB", "GEO": "GE",
+            "GER": "DE", "GRE": "GR", "GBS": "GW", "HAI": "HT", "HKG": "HK",
+            "HUN": "HU", "IND": "IN", "IRI": "IR", "IRL": "IE", "ISL": "IS",
+            "ISR": "IL", "ITA": "IT", "JAM": "JM", "JPN": "JP", "KAZ": "KZ",
+            "KEN": "KE", "KGZ": "KG", "KOR": "KR", "KOS": "XK", "KSA": "SA",
+            "LAT": "LV", "LBN": "LB", "LIE": "LI", "LTU": "LT", "LUX": "LU",
+            "MAD": "MG", "MAS": "MY", "MDA": "MD", "MEX": "MX", "MGL": "MN",
+            "MKD": "MK", "MLT": "MT", "MNE": "ME", "MON": "MC", "MAR": "MA",
+            "NED": "NL", "NGR": "NG", "NOR": "NO", "NZL": "NZ", "PAK": "PK",
+            "PHI": "PH", "POL": "PL", "POR": "PT", "PUR": "PR", "ROU": "RO",
+            "RSA": "ZA", "SGP": "SG", "SLO": "SI", "SMR": "SM", "SRB": "RS",
+            "SUI": "CH", "SVK": "SK", "SWE": "SE", "THA": "TH", "TPE": "TW",
+            "TTO": "TT", "TUR": "TR", "UAE": "AE", "UKR": "UA", "URU": "UY",
+            "USA": "US", "UZB": "UZ", "VEN": "VE",
+        };
+
+        function nocToFlag(noc) {
+            const iso = NOC_TO_ISO[noc] || noc;
+            if (iso.length !== 2) return '';
+            return String.fromCodePoint(...[...iso.toUpperCase()].map(c => 0x1F1E6 + c.charCodeAt(0) - 65));
+        }
+
         // Format dates using browser locale
         function formatDates() {
             const dateFormatter = new Intl.DateTimeFormat(undefined, { month: 'numeric', day: 'numeric' });
@@ -97,7 +146,88 @@
             });
         }
 
+        // Create a country code element safely using DOM methods
+        function createCountryElement(code, name) {
+            const span = document.createElement('span');
+            span.className = 'country-code clickable';
+            span.dataset.filter = 'country';
+            span.dataset.value = code;
+            span.title = name;
+
+            const flag = document.createElement('span');
+            flag.className = 'flag';
+            flag.textContent = nocToFlag(code);
+            span.appendChild(flag);
+
+            span.appendChild(document.createTextNode(' ' + code));
+            return span;
+        }
+
+        // Create overflow indicator element
+        function createOverflowElement(remaining) {
+            const span = document.createElement('span');
+            span.className = 'more-competitors';
+            span.dataset.tooltip = remaining.map(c => nocToFlag(c.code) + ' ' + c.name).join('\n');
+            span.textContent = '+' + remaining.length;
+            return span;
+        }
+
+        // Adjust competitors display based on available width
+        function adjustCompetitors() {
+            const FLAG_WIDTH = 52;
+            const OVERFLOW_WIDTH = 30;
+
+            document.querySelectorAll('.competitors-wrapper').forEach(wrapper => {
+                const cell = wrapper.closest('td');
+                const availableWidth = cell.clientWidth - 8;
+                const competitors = wrapper.dataset.competitors;
+                if (!competitors) return;
+
+                const comps = competitors.split(',').filter(c => c).map(c => {
+                    const [code, name] = c.split(':');
+                    return { code, name };
+                });
+
+                if (comps.length === 0) return;
+
+                let maxVisible = Math.floor(availableWidth / FLAG_WIDTH);
+                if (comps.length > maxVisible && maxVisible > 0) {
+                    maxVisible = Math.floor((availableWidth - OVERFLOW_WIDTH) / FLAG_WIDTH);
+                }
+                maxVisible = Math.max(1, Math.min(maxVisible, comps.length));
+
+                // Clear and rebuild using DOM methods
+                wrapper.textContent = '';
+
+                for (let i = 0; i < maxVisible; i++) {
+                    wrapper.appendChild(createCountryElement(comps[i].code, comps[i].name));
+                }
+
+                if (comps.length > maxVisible) {
+                    wrapper.appendChild(createOverflowElement(comps.slice(maxVisible)));
+                }
+            });
+        }
+
+        // Click-to-filter handler
+        document.addEventListener('click', function(e) {
+            const clickable = e.target.closest('[data-filter]');
+            if (clickable) {
+                const filterType = clickable.dataset.filter;
+                const filterValue = clickable.dataset.value;
+                if (!filterValue) return;
+
+                const form = document.getElementById('filters');
+                const select = form.querySelector('[name="' + filterType + '"]');
+                if (select) {
+                    select.value = filterValue;
+                    htmx.trigger(form, 'change');
+                }
+            }
+        });
+
         formatDates();
+        adjustCompetitors();
 
         document.body.addEventListener('scheduleRefreshed', function() {
             htmx.trigger('#filters', 'change');
@@ -108,7 +238,6 @@
             const rows = document.querySelectorAll('tr[data-upcoming="true"]');
             let target = null;
 
-            // Find first live event, or first upcoming
             for (const row of rows) {
                 if (row.classList.contains('live')) {
                     target = row;
@@ -130,7 +259,15 @@
         document.body.addEventListener('htmx:afterSwap', function(e) {
             if (e.detail.target.id === 'schedule-table') {
                 formatDates();
+                adjustCompetitors();
             }
+        });
+
+        // Adjust on resize
+        let resizeTimeout;
+        window.addEventListener('resize', function() {
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(adjustCompetitors, 100);
         });
     </script>
 </body>
