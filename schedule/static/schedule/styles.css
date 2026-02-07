@@ -172,8 +172,10 @@ header h1 {
     padding: 4px 8px;
     vertical-align: middle;
     white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+}
+
+.schedule-table td.competitors {
+    overflow: visible;
 }
 
 .schedule-table tbody tr.event-row {
@@ -321,21 +323,18 @@ header h1 {
 
 .more-competitors:hover::after {
     content: attr(data-tooltip);
-    position: absolute;
-    bottom: 100%;
-    left: 50%;
-    transform: translateX(-50%);
+    position: fixed;
     background: #333;
     color: white;
-    padding: 6px 10px;
+    padding: 8px 12px;
     border-radius: 4px;
     font-size: 11px;
     white-space: pre-line;
-    z-index: 1000;
-    min-width: 120px;
+    z-index: 9999;
+    min-width: 140px;
     text-align: left;
-    margin-bottom: 4px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    pointer-events: none;
 }
 
 /* Status column */
