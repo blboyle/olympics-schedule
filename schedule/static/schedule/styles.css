@@ -6,7 +6,7 @@
 
 body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    font-size: 14px;
+    font-size: 13px;
     line-height: 1.4;
     color: #1a1a1a;
     background: #f5f5f5;
@@ -15,7 +15,7 @@ body {
 header {
     background: #0b3d91;
     color: white;
-    padding: 12px 20px;
+    padding: 10px 20px;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -25,18 +25,23 @@ header {
 }
 
 header h1 {
-    font-size: 18px;
+    font-size: 16px;
     font-weight: 600;
+}
+
+.header-actions {
+    display: flex;
+    gap: 8px;
 }
 
 .btn {
     background: white;
     color: #0b3d91;
     border: none;
-    padding: 8px 16px;
+    padding: 6px 12px;
     border-radius: 4px;
     cursor: pointer;
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 500;
 }
 
@@ -57,10 +62,10 @@ header h1 {
 }
 
 .alert {
-    padding: 10px 16px;
-    margin: 10px 0;
+    padding: 8px 12px;
+    margin: 8px 0;
     border-radius: 4px;
-    font-size: 13px;
+    font-size: 12px;
 }
 
 .alert.success {
@@ -75,16 +80,16 @@ header h1 {
 
 #filters {
     background: white;
-    padding: 12px 20px;
+    padding: 10px 20px;
     border-bottom: 1px solid #ddd;
     position: sticky;
-    top: 48px;
+    top: 42px;
     z-index: 99;
 }
 
 .filter-row {
     display: flex;
-    gap: 16px;
+    gap: 12px;
     flex-wrap: wrap;
     align-items: center;
 }
@@ -92,16 +97,16 @@ header h1 {
 .filter-row label {
     display: flex;
     align-items: center;
-    gap: 6px;
-    font-size: 13px;
+    gap: 4px;
+    font-size: 12px;
     color: #555;
 }
 
 .filter-row select {
-    padding: 6px 10px;
+    padding: 4px 8px;
     border: 1px solid #ccc;
     border-radius: 4px;
-    font-size: 13px;
+    font-size: 12px;
     background: white;
 }
 
@@ -121,20 +126,19 @@ header h1 {
     width: 100%;
     border-collapse: collapse;
     background: white;
-    font-size: 13px;
-    table-layout: fixed;
+    font-size: 12px;
 }
 
 .schedule-table thead {
     position: sticky;
-    top: 96px;
+    top: 84px;
     z-index: 98;
 }
 
 .schedule-table th {
     background: #f0f0f0;
     border: 1px solid #ddd;
-    padding: 8px 10px;
+    padding: 6px 8px;
     text-align: left;
     font-weight: 600;
     white-space: nowrap;
@@ -155,22 +159,33 @@ header h1 {
 
 .schedule-table th.sorted.asc::after {
     content: " ▲";
-    font-size: 10px;
+    font-size: 9px;
 }
 
 .schedule-table th.sorted.desc::after {
     content: " ▼";
-    font-size: 10px;
+    font-size: 9px;
 }
 
 .schedule-table td {
     border: 1px solid #eee;
-    padding: 6px 10px;
-    vertical-align: top;
+    padding: 4px 8px;
+    vertical-align: middle;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
-.schedule-table tbody tr:hover {
-    background: #fafafa;
+.schedule-table tbody tr.event-row {
+    cursor: pointer;
+}
+
+.schedule-table tbody tr.event-row:hover {
+    background: #f5f8ff;
+}
+
+.schedule-table tbody tr.event-row.expanded {
+    background: #eef3ff;
 }
 
 .schedule-table tbody tr.live {
@@ -182,29 +197,54 @@ header h1 {
 }
 
 .schedule-table tbody tr.finished {
-    color: #888;
+    color: #999;
     background: #fafafa;
 }
 
-/* Column widths */
-.schedule-table th:nth-child(1),
-.schedule-table td:nth-child(1) { width: 70px; }
-.schedule-table th:nth-child(2),
-.schedule-table td:nth-child(2) { width: 140px; }
-.schedule-table th:nth-child(3),
-.schedule-table td:nth-child(3) { width: 180px; }
-.schedule-table th:nth-child(4),
-.schedule-table td:nth-child(4) { width: auto; }
-.schedule-table th:nth-child(5),
-.schedule-table td:nth-child(5) { width: 160px; }
-.schedule-table th:nth-child(6),
-.schedule-table td:nth-child(6) { width: 120px; }
-.schedule-table th:nth-child(7),
-.schedule-table td:nth-child(7) { width: 80px; }
+.schedule-table tbody tr.finished:hover {
+    background: #f5f5f5;
+}
 
-.time {
+.schedule-table tbody tr.highlight {
+    animation: flash 0.5s ease-in-out 3;
+}
+
+@keyframes flash {
+    0%, 100% { background: inherit; }
+    50% { background: #fff3cd; }
+}
+
+/* Event details row */
+.event-details td {
+    background: #f8f9fa;
+    padding: 12px 16px;
+}
+
+.details-content {
     font-size: 12px;
-    color: #666;
+    line-height: 1.6;
+}
+
+.detail-label {
+    font-weight: 600;
+    color: #555;
+}
+
+.country-full {
+    display: inline-block;
+    margin: 2px 4px 2px 0;
+}
+
+/* Time column - monospace for alignment */
+.time {
+    font-family: "SF Mono", Monaco, "Cascadia Code", monospace;
+    font-size: 11px;
+    color: #555;
+}
+
+.time-date {
+    color: #888;
+    margin-right: 4px;
 }
 
 .time-value {
@@ -212,48 +252,95 @@ header h1 {
     color: #333;
 }
 
+/* Sport column */
 .sport {
     font-weight: 500;
-}
-
-.event-name {
-    font-weight: 500;
+    max-width: 120px;
 }
 
 .medal-icon {
-    margin-right: 4px;
+    margin-right: 2px;
 }
 
-.session {
-    font-size: 12px;
-    color: #666;
+/* Event column */
+.event-name {
+    max-width: 280px;
 }
 
-.venue {
-    font-size: 12px;
+.event-title {
+    font-weight: 500;
 }
 
-.location {
-    display: block;
+.session-inline {
     color: #888;
+    font-size: 11px;
+    margin-left: 6px;
+}
+
+/* Venue column */
+.venue {
+    max-width: 140px;
     font-size: 11px;
 }
 
+.location-inline {
+    color: #888;
+}
+
+/* Competitors column */
 .competitors {
-    font-size: 12px;
+    max-width: 140px;
 }
 
 .country-code {
-    display: inline-block;
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
     background: #f0f0f0;
     padding: 1px 4px;
     border-radius: 2px;
     font-family: monospace;
-    font-size: 11px;
+    font-size: 10px;
+    margin-right: 3px;
 }
 
-.status {
+.country-code .flag {
     font-size: 12px;
+}
+
+.more-competitors {
+    display: inline-block;
+    background: #e0e0e0;
+    padding: 1px 5px;
+    border-radius: 2px;
+    font-size: 10px;
+    color: #555;
+    cursor: help;
+    position: relative;
+}
+
+.more-competitors:hover::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #333;
+    color: white;
+    padding: 6px 10px;
+    border-radius: 4px;
+    font-size: 11px;
+    white-space: pre-line;
+    z-index: 1000;
+    min-width: 120px;
+    text-align: left;
+    margin-bottom: 4px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+
+/* Status column */
+.status {
+    font-size: 11px;
     text-align: center;
 }
 
@@ -267,7 +354,7 @@ header h1 {
 }
 
 .status-finished {
-    color: #888;
+    color: #999;
 }
 
 .status-cancelled {
@@ -280,7 +367,7 @@ header h1 {
     color: white;
     padding: 2px 6px;
     border-radius: 3px;
-    font-size: 10px;
+    font-size: 9px;
     font-weight: 700;
     animation: pulse 2s infinite;
 }
@@ -297,7 +384,7 @@ header h1 {
 }
 
 .table-footer {
-    padding: 10px 0;
-    font-size: 12px;
+    padding: 8px 0;
+    font-size: 11px;
     color: #666;
 }

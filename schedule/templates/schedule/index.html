@@ -13,6 +13,9 @@
     <header>
         <h1>2026 Milano Cortina Winter Olympics</h1>
         <div class="header-actions">
+            <button id="jump-to-now" class="btn" title="Jump to current/next event">
+                ⏱ Now
+            </button>
             <button
                 hx-post="{% url 'schedule:refresh' %}"
                 hx-target="#refresh-status"
@@ -21,7 +24,7 @@
                 class="btn refresh-btn"
             >
                 <span id="refresh-spinner" class="htmx-indicator">...</span>
-                Refresh Data
+                Refresh
             </button>
         </div>
     </header>
@@ -84,6 +87,50 @@
     <script>
         document.body.addEventListener('scheduleRefreshed', function() {
             htmx.trigger('#filters', 'change');
+        });
+
+        // Row expand/collapse
+        document.addEventListener('click', function(e) {
+            const row = e.target.closest('.event-row');
+            if (row && !e.target.closest('a')) {
+                const details = row.nextElementSibling;
+                if (details && details.classList.contains('event-details')) {
+                    const isOpen = details.style.display !== 'none';
+                    details.style.display = isOpen ? 'none' : 'table-row';
+                    row.classList.toggle('expanded', !isOpen);
+                }
+            }
+        });
+
+        // Jump to now
+        document.getElementById('jump-to-now').addEventListener('click', function() {
+            const now = new Date();
+            const rows = document.querySelectorAll('.event-row[data-upcoming="true"]');
+            let target = null;
+
+            // Find first live event, or first upcoming
+            for (const row of rows) {
+                if (row.classList.contains('live')) {
+                    target = row;
+                    break;
+                }
+                if (!target) {
+                    target = row;
+                }
+            }
+
+            if (target) {
+                target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                target.classList.add('highlight');
+                setTimeout(() => target.classList.remove('highlight'), 2000);
+            }
+        });
+
+        // Re-init after HTMX swap
+        document.body.addEventListener('htmx:afterSwap', function(e) {
+            if (e.detail.target.id === 'schedule-table') {
+                // Event handlers use delegation, no re-init needed
+            }
         });
     </script>
 </body>
