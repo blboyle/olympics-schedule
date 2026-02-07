@@ -127,22 +127,7 @@ header h1 {
     border-collapse: collapse;
     background: white;
     font-size: 12px;
-    table-layout: fixed;
 }
-
-/* Column widths */
-.schedule-table th:nth-child(1),
-.schedule-table td:nth-child(1) { width: 85px; }  /* Time */
-.schedule-table th:nth-child(2),
-.schedule-table td:nth-child(2) { width: 120px; } /* Sport */
-.schedule-table th:nth-child(3),
-.schedule-table td:nth-child(3) { width: auto; }  /* Event - takes remaining space */
-.schedule-table th:nth-child(4),
-.schedule-table td:nth-child(4) { width: 130px; } /* Venue */
-.schedule-table th:nth-child(5),
-.schedule-table td:nth-child(5) { width: 180px; } /* Competitors */
-.schedule-table th:nth-child(6),
-.schedule-table td:nth-child(6) { width: 70px; }  /* Status */
 
 .schedule-table thead {
     position: sticky;
@@ -187,8 +172,6 @@ header h1 {
     padding: 4px 8px;
     vertical-align: middle;
     white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
 }
 
 .schedule-table td.competitors {

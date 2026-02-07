@@ -174,49 +174,50 @@
 
         // Adjust competitors display based on available width
         function adjustCompetitors() {
-            const FLAG_WIDTH = 48; // Width of each country-code element including margin
-            const OVERFLOW_WIDTH = 28; // Width of "+N" element
-
             document.querySelectorAll('.competitors-wrapper').forEach(wrapper => {
                 const cell = wrapper.closest('td');
                 if (!cell) return;
 
+                const flags = wrapper.querySelectorAll('.country-code');
+                const overflow = wrapper.querySelector('.more-competitors');
+                if (flags.length === 0) return;
+
                 const competitors = wrapper.dataset.competitors;
                 if (!competitors) return;
-
-                const comps = competitors.split(',').filter(c => c).map(c => {
+                const allComps = competitors.split(',').filter(c => c).map(c => {
                     const [code, name] = c.split(':');
                     return { code, name };
                 });
 
-                if (comps.length === 0) return;
+                // Show all flags first to measure
+                flags.forEach(f => f.style.display = '');
+                if (overflow) overflow.remove();
 
-                // Get cell's computed width (more reliable than clientWidth)
+                // Get available width
                 const cellStyle = window.getComputedStyle(cell);
                 const availableWidth = cell.clientWidth
                     - parseFloat(cellStyle.paddingLeft)
                     - parseFloat(cellStyle.paddingRight);
 
-                // Calculate how many flags fit
-                let maxVisible = Math.floor(availableWidth / FLAG_WIDTH);
+                // Measure actual flag width from first element
+                const flagWidth = flags[0].offsetWidth + 3; // +3 for gap
+                const overflowWidth = 28;
 
-                // If not all fit, reserve space for overflow indicator
-                if (comps.length > maxVisible && maxVisible > 0) {
-                    maxVisible = Math.floor((availableWidth - OVERFLOW_WIDTH) / FLAG_WIDTH);
+                // Calculate how many fit
+                let maxVisible = Math.floor(availableWidth / flagWidth);
+                if (allComps.length > maxVisible && maxVisible > 0) {
+                    maxVisible = Math.floor((availableWidth - overflowWidth) / flagWidth);
                 }
+                maxVisible = Math.max(1, Math.min(maxVisible, flags.length));
 
-                // Ensure at least 1, at most all competitors
-                maxVisible = Math.max(1, Math.min(maxVisible, comps.length));
+                // Hide extras and add overflow if needed
+                flags.forEach((f, i) => {
+                    f.style.display = i < maxVisible ? '' : 'none';
+                });
 
-                // Clear and rebuild using DOM methods
-                wrapper.textContent = '';
-
-                for (let i = 0; i < maxVisible; i++) {
-                    wrapper.appendChild(createCountryElement(comps[i].code, comps[i].name));
-                }
-
-                if (comps.length > maxVisible) {
-                    wrapper.appendChild(createOverflowElement(comps.slice(maxVisible)));
+                if (allComps.length > maxVisible) {
+                    const remaining = allComps.slice(maxVisible);
+                    wrapper.appendChild(createOverflowElement(remaining));
                 }
             });
         }
