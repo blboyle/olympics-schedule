@@ -1,0 +1,63 @@
+{% load schedule_tags %}
+
+<table class="schedule-table">
+    <thead>
+        <tr>
+            <th class="sortable {% if sort_by == 'start_time' %}sorted {{ sort_dir }}{% endif %}">
+                <a href="?{% query_string sort='start_time' dir=sort_dir|toggle_dir %}">Time</a>
+            </th>
+            <th class="sortable {% if sort_by == 'discipline__name' %}sorted {{ sort_dir }}{% endif %}">
+                <a href="?{% query_string sort='discipline__name' dir=sort_dir|toggle_dir %}">Sport</a>
+            </th>
+            <th class="sortable {% if sort_by == 'event_name' %}sorted {{ sort_dir }}{% endif %}">
+                <a href="?{% query_string sort='event_name' dir=sort_dir|toggle_dir %}">Event</a>
+            </th>
+            <th>Session</th>
+            <th class="sortable {% if sort_by == 'venue__name' %}sorted {{ sort_dir }}{% endif %}">
+                <a href="?{% query_string sort='venue__name' dir=sort_dir|toggle_dir %}">Venue</a>
+            </th>
+            <th>Competitors</th>
+            <th>Status</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for event in events %}
+        <tr class="{% if event.is_live %}live{% elif event.status == 'FINISHED' %}finished{% endif %}">
+            <td class="time">
+                {{ event.start_time|date:"M j" }}<br>
+                <span class="time-value">{{ event.start_time|date:"H:i" }}</span>
+            </td>
+            <td class="sport">{{ event.discipline.name }}</td>
+            <td class="event-name">
+                {% if event.is_medal_event %}<span class="medal-icon" title="Medal Event">&#127942;</span>{% endif %}
+                {{ event.event_name }}
+            </td>
+            <td class="session">{{ event.unit_name }}</td>
+            <td class="venue">
+                {% if event.venue %}{{ event.venue.short_name }}{% endif %}
+                {% if event.location %}<span class="location">{{ event.location }}</span>{% endif %}
+            </td>
+            <td class="competitors">
+                {% for c in event.competitors.all %}
+                <span class="country-code" title="{{ c.name }}">{{ c.code }}</span>{% if not forloop.last %} {% endif %}
+                {% endfor %}
+            </td>
+            <td class="status status-{{ event.status|lower }}">
+                {% if event.is_live %}
+                <span class="live-badge">LIVE</span>
+                {% else %}
+                {{ event.get_status_display }}
+                {% endif %}
+            </td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="7" class="no-events">No events found</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<div class="table-footer">
+    {{ events|length }} event{{ events|length|pluralize }}
+</div>

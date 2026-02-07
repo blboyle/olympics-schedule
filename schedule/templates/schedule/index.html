@@ -1,0 +1,90 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2026 Winter Olympics Schedule</title>
+    <link rel="stylesheet" href="{% static 'schedule/styles.css' %}">
+    <meta name="csrf-token" content="{{ csrf_token }}">
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+</head>
+<body hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
+    <header>
+        <h1>2026 Milano Cortina Winter Olympics</h1>
+        <div class="header-actions">
+            <button
+                hx-post="{% url 'schedule:refresh' %}"
+                hx-target="#refresh-status"
+                hx-swap="innerHTML"
+                hx-indicator="#refresh-spinner"
+                class="btn refresh-btn"
+            >
+                <span id="refresh-spinner" class="htmx-indicator">...</span>
+                Refresh Data
+            </button>
+        </div>
+    </header>
+
+    <div id="refresh-status"></div>
+
+    <form id="filters" hx-get="{% url 'schedule:index' %}" hx-target="#schedule-table" hx-trigger="change" hx-push-url="true">
+        <div class="filter-row">
+            <label>
+                Sport:
+                <select name="discipline">
+                    <option value="">All Sports</option>
+                    {% for d in disciplines %}
+                    <option value="{{ d.code }}" {% if d.code == current_discipline %}selected{% endif %}>{{ d.name }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+
+            <label>
+                Country:
+                <select name="country">
+                    <option value="">All Countries</option>
+                    {% for c in countries %}
+                    <option value="{{ c.code }}" {% if c.code == current_country %}selected{% endif %}>{{ c.name }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+
+            <label>
+                Date:
+                <select name="date">
+                    <option value="">All Dates</option>
+                    {% for d in dates %}
+                    <option value="{{ d|date:'Y-m-d' }}" {% if d|date:'Y-m-d' == current_date %}selected{% endif %}>{{ d|date:'D, M j' }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+
+            <label>
+                Status:
+                <select name="status">
+                    <option value="">All</option>
+                    <option value="LIVE" {% if current_status == 'LIVE' %}selected{% endif %}>Live Now</option>
+                    <option value="UPCOMING" {% if current_status == 'UPCOMING' %}selected{% endif %}>Upcoming</option>
+                    <option value="FINISHED" {% if current_status == 'FINISHED' %}selected{% endif %}>Finished</option>
+                </select>
+            </label>
+
+            <label class="checkbox-label">
+                <input type="checkbox" name="medal" value="1" {% if medal_only %}checked{% endif %}>
+                Medal Events Only
+            </label>
+        </div>
+    </form>
+
+    <div id="schedule-table">
+        {% include "schedule/_table.html" %}
+    </div>
+
+    <script>
+        document.body.addEventListener('scheduleRefreshed', function() {
+            htmx.trigger('#filters', 'change');
+        });
+    </script>
+</body>
+</html>
