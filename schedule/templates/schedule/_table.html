@@ -1,4 +1,4 @@
-{% load schedule_tags %}
+{% load schedule_tags l10n %}
 
 <table class="schedule-table">
     <thead>
@@ -12,7 +12,6 @@
             <th class="sortable {% if sort_by == 'event_name' %}sorted {{ sort_dir }}{% endif %}">
                 <a href="?{% query_string sort='event_name' dir=sort_dir|toggle_dir %}">Event</a>
             </th>
-            <th>Session</th>
             <th class="sortable {% if sort_by == 'venue__name' %}sorted {{ sort_dir }}{% endif %}">
                 <a href="?{% query_string sort='venue__name' dir=sort_dir|toggle_dir %}">Venue</a>
             </th>
@@ -22,25 +21,36 @@
     </thead>
     <tbody>
         {% for event in events %}
-        <tr class="{% if event.is_live %}live{% elif event.status == 'FINISHED' %}finished{% endif %}">
-            <td class="time">
-                {{ event.start_time|date:"M j" }}<br>
-                <span class="time-value">{{ event.start_time|date:"H:i" }}</span>
+        <tr class="{% if event.is_live %}live{% elif event.status == 'FINISHED' %}finished{% endif %}"
+            data-start="{{ event.start_time|date:'c' }}"
+            {% if event.status == 'SCHEDULED' or event.is_live %}data-upcoming="true"{% endif %}>
+            <td class="time" data-datetime="{{ event.start_time|date:'c' }}">
+                <span class="time-date"></span>
+                <span class="time-value"></span>
             </td>
-            <td class="sport">{{ event.discipline.name }}</td>
-            <td class="event-name">
-                {% if event.is_medal_event %}<span class="medal-icon" title="Medal Event">&#127942;</span>{% endif %}
-                {{ event.event_name }}
+            <td class="sport clickable" data-filter="discipline" data-value="{{ event.discipline.code }}">
+                {% if event.is_medal_event %}<span class="medal-icon" title="Medal Event">🏅</span>{% endif %}
+                {{ event.discipline.name }}
             </td>
-            <td class="session">{{ event.unit_name }}</td>
-            <td class="venue">
+            <td class="event-name clickable" data-filter="event" data-value="{{ event.event_name }}">
+                <span class="event-title">{{ event.event_name }}</span>
+                <span class="session-inline">{{ event.unit_name }}</span>
+            </td>
+            <td class="venue clickable" data-filter="venue" data-value="{% if event.venue %}{{ event.venue.code }}{% endif %}">
                 {% if event.venue %}{{ event.venue.short_name }}{% endif %}
-                {% if event.location %}<span class="location">{{ event.location }}</span>{% endif %}
+                {% if event.location %}<span class="location-inline">({{ event.location }})</span>{% endif %}
             </td>
             <td class="competitors">
-                {% for c in event.competitors.all %}
-                <span class="country-code" title="{{ c.name }}">{{ c.code }}</span>{% if not forloop.last %} {% endif %}
+                {% with comps=event.competitors.all %}
+                <span class="competitors-wrapper" data-competitors="{% for c in comps %}{{ c.code }}:{{ c.name }}{% if not forloop.last %},{% endif %}{% endfor %}">
+                {% for c in comps %}
+                    <span class="country-code clickable" data-filter="country" data-value="{{ c.code }}" title="{{ c.name }}">
+                        <span class="flag">{{ c.code|country_flag }}</span>
+                        {{ c.code }}
+                    </span>
                 {% endfor %}
+                </span>
+                {% endwith %}
             </td>
             <td class="status status-{{ event.status|lower }}">
                 {% if event.is_live %}
@@ -52,7 +62,7 @@
         </tr>
         {% empty %}
         <tr>
-            <td colspan="7" class="no-events">No events found</td>
+            <td colspan="6" class="no-events">No events found</td>
         </tr>
         {% endfor %}
     </tbody>

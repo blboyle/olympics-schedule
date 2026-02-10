@@ -13,6 +13,9 @@
     <header>
         <h1>2026 Milano Cortina Winter Olympics</h1>
         <div class="header-actions">
+            <button id="jump-to-now" class="btn" title="Jump to current/next event">
+                ⏱ Now
+            </button>
             <button
                 hx-post="{% url 'schedule:refresh' %}"
                 hx-target="#refresh-status"
@@ -21,7 +24,7 @@
                 class="btn refresh-btn"
             >
                 <span id="refresh-spinner" class="htmx-indicator">...</span>
-                Refresh Data
+                Refresh
             </button>
         </div>
     </header>
@@ -61,6 +64,26 @@
             </label>
 
             <label>
+                Venue:
+                <select name="venue">
+                    <option value="">All Venues</option>
+                    {% for v in venues %}
+                    <option value="{{ v.code }}" {% if v.code == current_venue %}selected{% endif %}>{{ v.short_name }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+
+            <label>
+                Event:
+                <select name="event">
+                    <option value="">All Events</option>
+                    {% for e in event_names %}
+                    <option value="{{ e }}" {% if e == current_event %}selected{% endif %}>{{ e }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+
+            <label>
                 Status:
                 <select name="status">
                     <option value="">All</option>
@@ -82,8 +105,187 @@
     </div>
 
     <script>
+        // NOC to flag emoji mapping (for dynamic competitor rendering)
+        const NOC_TO_ISO = {
+            "AIN": "XX", "ALB": "AL", "AND": "AD", "ARG": "AR", "ARM": "AM",
+            "AUS": "AU", "AUT": "AT", "AZE": "AZ", "BEL": "BE", "BEN": "BJ",
+            "BIH": "BA", "BOL": "BO", "BRA": "BR", "BUL": "BG", "CAN": "CA",
+            "CHI": "CL", "CHN": "CN", "COL": "CO", "CRO": "HR", "CYP": "CY",
+            "CZE": "CZ", "DEN": "DK", "ECU": "EC", "ERI": "ER", "ESP": "ES",
+            "EST": "EE", "FIN": "FI", "FRA": "FR", "GBR": "GB", "GEO": "GE",
+            "GER": "DE", "GRE": "GR", "GBS": "GW", "HAI": "HT", "HKG": "HK",
+            "HUN": "HU", "IND": "IN", "IRI": "IR", "IRL": "IE", "ISL": "IS",
+            "ISR": "IL", "ITA": "IT", "JAM": "JM", "JPN": "JP", "KAZ": "KZ",
+            "KEN": "KE", "KGZ": "KG", "KOR": "KR", "KOS": "XK", "KSA": "SA",
+            "LAT": "LV", "LBN": "LB", "LIE": "LI", "LTU": "LT", "LUX": "LU",
+            "MAD": "MG", "MAS": "MY", "MDA": "MD", "MEX": "MX", "MGL": "MN",
+            "MKD": "MK", "MLT": "MT", "MNE": "ME", "MON": "MC", "MAR": "MA",
+            "NED": "NL", "NGR": "NG", "NOR": "NO", "NZL": "NZ", "PAK": "PK",
+            "PHI": "PH", "POL": "PL", "POR": "PT", "PUR": "PR", "ROU": "RO",
+            "RSA": "ZA", "SGP": "SG", "SLO": "SI", "SMR": "SM", "SRB": "RS",
+            "SUI": "CH", "SVK": "SK", "SWE": "SE", "THA": "TH", "TPE": "TW",
+            "TTO": "TT", "TUR": "TR", "UAE": "AE", "UKR": "UA", "URU": "UY",
+            "USA": "US", "UZB": "UZ", "VEN": "VE",
+        };
+
+        function nocToFlag(noc) {
+            const iso = NOC_TO_ISO[noc] || noc;
+            if (iso.length !== 2) return '';
+            return String.fromCodePoint(...[...iso.toUpperCase()].map(c => 0x1F1E6 + c.charCodeAt(0) - 65));
+        }
+
+        // Format dates using browser locale
+        function formatDates() {
+            const dateFormatter = new Intl.DateTimeFormat(undefined, { month: 'numeric', day: 'numeric' });
+            const timeFormatter = new Intl.DateTimeFormat(undefined, { hour: '2-digit', minute: '2-digit', hour12: false });
+
+            document.querySelectorAll('.time[data-datetime]').forEach(cell => {
+                const dt = new Date(cell.dataset.datetime);
+                cell.querySelector('.time-date').textContent = dateFormatter.format(dt);
+                cell.querySelector('.time-value').textContent = timeFormatter.format(dt);
+            });
+        }
+
+        // Create a country code element safely using DOM methods
+        function createCountryElement(code, name) {
+            const span = document.createElement('span');
+            span.className = 'country-code clickable';
+            span.dataset.filter = 'country';
+            span.dataset.value = code;
+            span.title = name;
+
+            const flag = document.createElement('span');
+            flag.className = 'flag';
+            flag.textContent = nocToFlag(code);
+            span.appendChild(flag);
+
+            span.appendChild(document.createTextNode(' ' + code));
+            return span;
+        }
+
+        // Create overflow indicator element
+        function createOverflowElement(remaining) {
+            const span = document.createElement('span');
+            span.className = 'more-competitors';
+            span.dataset.tooltip = remaining.map(c => nocToFlag(c.code) + ' ' + c.name).join('\n');
+            span.textContent = '+' + remaining.length;
+            return span;
+        }
+
+        // Adjust competitors display based on available width
+        function adjustCompetitors() {
+            document.querySelectorAll('.competitors-wrapper').forEach(wrapper => {
+                const cell = wrapper.closest('td');
+                if (!cell) return;
+
+                const flags = wrapper.querySelectorAll('.country-code');
+                const overflow = wrapper.querySelector('.more-competitors');
+                if (flags.length === 0) return;
+
+                const competitors = wrapper.dataset.competitors;
+                if (!competitors) return;
+                const allComps = competitors.split(',').filter(c => c).map(c => {
+                    const [code, name] = c.split(':');
+                    return { code, name };
+                });
+
+                // Show all flags first to measure
+                flags.forEach(f => f.style.display = '');
+                if (overflow) overflow.remove();
+
+                // Get available width
+                const cellStyle = window.getComputedStyle(cell);
+                const availableWidth = cell.clientWidth
+                    - parseFloat(cellStyle.paddingLeft)
+                    - parseFloat(cellStyle.paddingRight);
+
+                // Measure actual flag width from first element
+                const flagWidth = flags[0].offsetWidth + 3; // +3 for gap
+                const overflowWidth = 28;
+
+                // Calculate how many fit
+                let maxVisible = Math.floor(availableWidth / flagWidth);
+                if (allComps.length > maxVisible && maxVisible > 0) {
+                    maxVisible = Math.floor((availableWidth - overflowWidth) / flagWidth);
+                }
+                maxVisible = Math.max(1, Math.min(maxVisible, flags.length));
+
+                // Hide extras and add overflow if needed
+                flags.forEach((f, i) => {
+                    f.style.display = i < maxVisible ? '' : 'none';
+                });
+
+                if (allComps.length > maxVisible) {
+                    const remaining = allComps.slice(maxVisible);
+                    wrapper.appendChild(createOverflowElement(remaining));
+                }
+            });
+        }
+
+        // Click-to-filter handler
+        document.addEventListener('click', function(e) {
+            const clickable = e.target.closest('[data-filter]');
+            if (clickable) {
+                const filterType = clickable.dataset.filter;
+                const filterValue = clickable.dataset.value;
+                if (!filterValue) return;
+
+                const form = document.getElementById('filters');
+                const select = form.querySelector('[name="' + filterType + '"]');
+                if (select) {
+                    select.value = filterValue;
+                    htmx.trigger(form, 'change');
+                }
+            }
+        });
+
+        formatDates();
+        // Run adjustCompetitors after paint so widths are calculated
+        requestAnimationFrame(() => {
+            requestAnimationFrame(adjustCompetitors);
+        });
+
         document.body.addEventListener('scheduleRefreshed', function() {
             htmx.trigger('#filters', 'change');
+        });
+
+        // Jump to now
+        document.getElementById('jump-to-now').addEventListener('click', function() {
+            const rows = document.querySelectorAll('tr[data-upcoming="true"]');
+            let target = null;
+
+            for (const row of rows) {
+                if (row.classList.contains('live')) {
+                    target = row;
+                    break;
+                }
+                if (!target) {
+                    target = row;
+                }
+            }
+
+            if (target) {
+                target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                target.classList.add('highlight');
+                setTimeout(() => target.classList.remove('highlight'), 2000);
+            }
+        });
+
+        // Re-init after HTMX swap
+        document.body.addEventListener('htmx:afterSwap', function(e) {
+            if (e.detail.target.id === 'schedule-table') {
+                formatDates();
+                requestAnimationFrame(() => {
+                    requestAnimationFrame(adjustCompetitors);
+                });
+            }
+        });
+
+        // Adjust on resize
+        let resizeTimeout;
+        window.addEventListener('resize', function() {
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(adjustCompetitors, 100);
         });
     </script>
 </body>
